@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug - Hospital Management</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+    .section { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .info { color: #60a5fa; }
+    pre { background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>🏥 Hospital Management - Debug Page</h1>
+  <div id="output"></div>
+
+  <script>
+    const output = document.getElementById('output');
+    
+    function addSection(title, content, type = 'info') {
+      const div = document.createElement('div');
+      div.className = 'section';
+      div.innerHTML = `
+        <h2 class="${type}">${title}</h2>
+        <pre>${JSON.stringify(content, null, 2)}</pre>
+      `;
+      output.appendChild(div);
+    }
+
+    async function debug() {
+      try {
+        // 1. Check Auth
+        const authData = JSON.parse(localStorage.getItem('auth-storage'));
+        const token = localStorage.getItem('token');
+        addSection('👤 Authentication', {
+          user: authData?.user,
+          tokenExists: !!token,
+          yourId: authData?.user?.id
+        });
+
+        // 2. Get All Tokens
+        const tokensRes = await fetch('http://localhost:5000/api/tokens', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const tokensData = await tokensRes.json();
+        addSection('🎫 All Tokens', tokensData);
+
+        // 3. Get Your Tokens
+        const yourTokensRes = await fetch(
+          'http://localhost:5000/api/tokens/patient/' + authData?.user?.id,
+          { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        const yourTokens = await yourTokensRes.json();
+        addSection('🎫 Your Tokens', yourTokens);
+
+        // 4. Get All Doctors
+        const doctorsRes = await fetch('http://localhost:5000/api/users/doctors');
+        const doctors = await doctorsRes.json();
+        addSection('👨‍⚕️ All Doctors', doctors);
+
+        // 5. Check if token doctor matches
+        const latestToken = yourTokens.data?.tokens?.[0];
+        const doctorId = latestToken?.doctorId?._id || latestToken?.doctorId;
+        addSection('🔍 Token-Doctor Match Check', {
+          tokenDoctorId: doctorId,
+          yourDoctorsId: authData?.user?.id,
+          match: doctorId === authData?.user?.id,
+          token: latestToken
+        });
+
+        // 6. Get Doctor's Tokens
+        if (authData?.user?.id) {
+          const docTokensRes = await fetch(
+            'http://localhost:5000/api/tokens/doctor/' + authData?.user?.id,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+          );
+          const docTokens = await docTokensRes.json();
+          addSection('👨‍⚕️ Doctor Tokens (What doctor sees)', docTokens);
+        }
+
+        addSection('✅ Debug Complete', 'Check console for details', 'success');
+
+      } catch (e) {
+        addSection('❌ Error', e.message, 'error');
+      }
+    }
+
+    debug();
+  </script>
+</body>
+</html>
