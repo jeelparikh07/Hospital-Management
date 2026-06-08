@@ -1,4 +1,23 @@
+# Dependencies
+**/node_modules/
 node_modules/
+
+# Next.js Build and Cache Outputs
+**/.next/
 .next/
+**/out/
 out/
+
+# Production Build Artifacts
+**/build/
+build/
+**/dist/
+dist/
+
+# Local Environment Variables and Secrets
 .env*.local
+.env
+
+# System-specific Files
+.DS_Store
+Thumbs.db
